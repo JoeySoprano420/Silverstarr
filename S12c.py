@@ -688,3 +688,4 @@ if __name__ == "__main__":
     ir = lower_to_ir(ast)
     print("IR:", ir)
     lint_ast(ast)
+
