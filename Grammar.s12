@@ -1,0 +1,79 @@
+File            <- Stmt*
+Stmt            <- Import / Use / Capsule / Decl / Fn / Say / Semi
+Semi            <- ';'?
+Say             <- 'say' Expr
+
+Import          <- 'import' Ident (',' Ident)* ('as' Ident)?
+Use             <- 'use' 'Trait' '<' Type ('>' (',' 'Trait' '<' Type '>')* )
+
+Capsule         <- 'capsule' String 'with' TraitList Confirm? DoList? CapsuleBody
+TraitList       <- TraitSpec (',' TraitSpec)*
+TraitSpec       <- 'Trait' '<' Type '>'
+Confirm         <- 'confirm' 'with' '[' ResList ']'
+DoList          <- 'do' 'with' '[' KVList ']'
+ResList         <- Res (',' Res)*
+Res             <- Ident ('.' Ident)*
+KVList          <- KV (',' KV)*
+KV              <- Ident ':' Expr
+CapsuleBody     <- (Fn / Say / Stmt)* ('done')?
+
+Decl            <- Record / Enum / Trait / Const / Let / ExternDGM
+Record          <- 'record' Ident '{' FieldList '}'
+FieldList       <- (Ident ':' Type) (',' Ident ':' Type)*
+Enum            <- 'enum' Ident EnumAlts 'end'
+EnumAlts        <- ('|' Ident Payload?)+
+Payload         <- '(' ParamList ')'
+
+Trait           <- 'trait' Ident 'is' FnSigList 'end'
+FnSigList       <- (FnSig)*
+FnSig           <- 'fn' Ident '(' ParamList? ')' RetType? ';'
+
+Const           <- 'const' Ident ':' Type ':=' Expr
+Let             <- 'let' Ident ':' Type ':=' Expr
+
+ExternDGM       <- 'extern' 'dgm' Ident '{' DgmBody '}'
+DgmBody         <- .*?  -- raw, validated after parse
+
+Fn              <- 'fn' Ident '(' ParamList? ')' RetType? 'is' Block 'end'
+ParamList       <- Param (',' Param)*
+Param           <- Ident ':' Type
+RetType         <- '->' Type
+Block           <- Stmt*
+
+Match           <- 'match' Expr 'is' Case+ 'end'
+Case            <- 'case' Pattern Guard? '=>' 'yield' Expr ';'
+Pattern         <- '_' / Literal / Ident / EnumPat / RecPat / IndexPat
+EnumPat         <- Ident '(' BindList? ')'
+RecPat          <- Ident '{' RecFields? '}'
+RecFields       <- RecField (',' RecField)*
+RecField        <- Ident (':' Expr)?  | Ident  -- constraint or bind
+IndexPat        <- Ident '[' Expr ']' ':' Ident
+BindList        <- Ident (',' Ident)*
+Guard           <- 'when' Expr
+
+If              <- 'if' Expr 'is' Block ('elif' Expr 'is' Block)* ('else' Block)? 'end'
+While           <- 'while' Expr 'is' Block 'end'
+For             <- 'for' ForHead 'is' Block 'end'
+ForHead         <- '(' Ident ',' Ident ')' 'in' Expr  ('step' Expr)?
+                 | Ident 'in' Expr ('step' Expr)?
+
+Expr            <- Or
+Or              <- And ('||' And)*
+And             <- Cmp ('&&' Cmp)*
+Cmp             <- Sum (('=='/'!='/'<'/'<='/'>'/'>=') Sum)*
+Sum             <- Prod (('+'/'-') Prod)*
+Prod            <- Unary (('*'/'/'/'%') Unary)*
+Unary           <- ('!'/'-')? Postfix
+Postfix         <- Primary (('.' Ident) | ('[' Expr ']'))*
+Primary         <- Number / String / Ident / Call / Group / Array / RecordLit / Ternary
+Call            <- Ident '(' ArgList? ')'
+ArgList         <- Expr (',' Expr)*
+Group           <- '(' Expr ')'
+Array           <- '[' (Expr (',' Expr)*)? ']'
+RecordLit       <- Ident '{' KVList? '}'
+Ternary         <- Or '?' Expr ':' Expr
+
+Type            <- Ident ('<' Type (',' Type)* '>')?
+Ident           <- [A-Za-z_][A-Za-z0-9_]*
+Number          <- [0-9]+ ('.' [0-9]+)?
+String          <- '"' [^"]* '"'
