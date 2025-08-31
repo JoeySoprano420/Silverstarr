@@ -1,0 +1,70 @@
+trait Animate is fn pose(name: str) -> void; end
+
+capsule "Forge" with Trait<Animate>
+confirm with [fs.read, fs.write, time.now]
+do with [pose: jump]
+  say "Capsule sealed."
+done
+
+enum EvidenceStrength
+  | Weak
+  | Moderate
+  | Strong(boost: i32)
+end
+
+record Vec2 { x: i32, y: i32 }
+
+extern dgm twice_add {
+  2 0 1
+  1 1 2
+  4 0 1
+  E
+}
+
+fn tiny() -> i32 is
+  return 3 + 4;
+end
+
+fn main() -> i32 is
+  say "== next-weld demo ==";
+
+  -- record pattern with write-through bind
+  let v: Vec2 := Vec2 { x: 3, y: 9 };
+  say match v is
+    case Vec2 { x: 3, y } => yield y;       -- binds y into scope
+    case _                 => yield 0;
+  end;
+  say y;                                    -- write-through
+
+  -- for with step over range
+  let s: i32 := 0;
+  for i in 0..10 step 3 is
+    s = s + i;               -- 0+3+6+9 = 18
+  end
+  say s;
+
+  -- for (i, x) over array
+  let a: Array<i32> := [5,6,7,8];
+  let t: i32 := 0;
+  for (k, x) in a is
+    t = t + (k * x);         -- 0*5 + 1*6 + 2*7 + 3*8 = 44
+  end
+  say t;
+
+  -- enum payload + guard still works
+  let e: EvidenceStrength := Strong(5);
+  say match e is
+    case Weak               => yield 0;
+    case Moderate           => yield 1;
+    case Strong(b) when b>3 => yield 2;
+    case _                  => yield -1;
+  end;
+
+  -- DGM call with args
+  say twice_add(7, 5);       -- 24
+
+  -- tiny() will be inlined by SIBE's tiny inliner
+  say tiny();
+
+  return 0;
+end
