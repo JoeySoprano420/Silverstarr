@@ -908,3 +908,87 @@ But Silverstarr’s **capsule model + SIBE engine** make it stand apart. It’s 
 
 ---
 
+Silverstarr’s error handling is built around **preflight validation** and **runtime safety wrappers**, making it one of the most predictable and secure languages in its class. Let’s break it down:
+
+---
+
+### 🛠 Error Management in Silverstarr
+
+#### 1. **Preflight Errors (Compile-Time)**
+Handled by the **SIBE engine** before any code runs:
+- **Missing capability**: If you call `fs.read()` without confirming `fs.read`, SIBE halts the build.
+- **Non-exhaustive `match`**: You must cover all enum cases unless you use `_`.
+- **Unimplemented trait methods**: If a capsule claims a trait but skips a method, it’s rejected.
+- **Unsafe inline assembly without gating**: You must confirm the architecture (e.g. `arch.x86`) before using `asm`.
+- **Unresolved imports or symbols**: Any missing reference stops the build.
+
+These are **precise and descriptive**. Example:
+```text
+capsule 'Phoenix:Session' requires unknown capability 'gpu.drw' (did you mean 'gpu.draw'?)
+```
+
+#### 2. **Runtime Errors**
+Rare, but handled gracefully:
+- **Bounds checks**: Arrays and ranges are guarded.
+- **I/O failures**: Wrapped in `Result<T, ioerr>` types.
+- **Explicit panics**: You can trigger a panic manually, but it’s discouraged.
+
+Example:
+```silverstarr
+fn read_file(path: str) -> Result<str, ioerr> is
+  return fs.read(path); -- requires confirm with [fs.read]
+end
+```
+
+---
+
+### 🎯 Use Cases for Silverstarr
+
+Silverstarr shines in environments where **modularity, safety, and clarity** are critical. Here are some real-world examples:
+
+#### 1. **Secure Systems Programming**
+- Embedded firmware with locked-down capabilities
+- OS-level modules that declare exactly what hardware they touch
+
+#### 2. **Game Engine Capsules**
+- `Drawable`, `Animate`, and `Input` traits for rendering and control
+- GPU draw calls gated by `confirm with [gpu.draw]`
+
+#### 3. **Protocol Design**
+- Network capsules that confirm `net.tcp` or `net.udp`
+- Trait contracts for handshake, confirm, and transmit
+
+#### 4. **Educational Runtimes**
+- Safe environments for teaching systems programming
+- Capsules that simulate file access, drawing, and timing with full traceability
+
+#### 5. **Symbolic Tooling**
+- Animated CLI feedback
+- Debuggers that show trait lineage, capability flow, and intent metadata
+
+---
+
+### 🧪 Example Capsule: Game Module
+
+```silverstarr
+trait Drawable is fn draw() -> void; end
+
+capsule "Player" with Trait<Drawable>
+  confirm with [gpu.draw]
+  fn draw() -> void is
+    say "Drawing player sprite";
+  end
+done
+```
+
+This capsule:
+- Implements `Drawable`
+- Confirms GPU access
+- Locks the binary before runtime
+
+---
+
+Silverstarr’s model is like **Rust meets Ada**, but with a **capsule-first mindset**. You don’t just write code—you **declare what it does**, **prove it’s safe**, and **lock it down** before it ever runs.
+
+## _____
+
