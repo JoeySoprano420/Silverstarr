@@ -1,6 +1,4 @@
-# Silverstarr
-
-# Silverstarr (S12) — The Monolith
+# Silverstarr (S12) — 
 
 *A dramatic, strongly-typed capsule language that speaks in Corsheigh’s ritual and Innesce’s rigor — and runs only after the stage crew’s Static Interpretation Before Execution (SIBE) locks every bolt.*
 
