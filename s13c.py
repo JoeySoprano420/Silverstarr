@@ -868,3 +868,72 @@ def parse_compare(expr: str) -> Optional[Any]:
 
     # Fallback: not a comparison/logical expression
     return None
+
+def parse_file(src: str) -> List[Any]:
+    ast = []
+    lines = src.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if not line or line.startswith('--'):
+            i += 1
+            continue
+        # Enum
+        if line.startswith('enum '):
+            enum_block = [line]
+            i += 1
+            while i < len(lines) and not lines[i].strip().endswith('end'):
+                enum_block.append(lines[i])
+                i += 1
+            if i < len(lines):
+                enum_block.append(lines[i])
+                i += 1
+            ast.append(parse_enum('\n'.join(enum_block)))
+            continue
+        # Record
+        if line.startswith('record '):
+            record_block = [line]
+            while not line.endswith('}'):
+                i += 1
+                line = lines[i].strip()
+                record_block.append(line)
+            ast.append(parse_record(' '.join(record_block)))
+            i += 1
+            continue
+        # Capsule
+        if line.startswith('capsule '):
+            capsule_block = [line]
+            i += 1
+            while i < len(lines) and lines[i].strip() != 'done':
+                capsule_block.append(lines[i])
+                i += 1
+            if i < len(lines):
+                capsule_block.append(lines[i])
+                i += 1
+            ast.append(parse_capsule(capsule_block))
+            continue
+        # Trait
+        if line.startswith('trait '):
+            trait_block = [line]
+            i += 1
+            while i < len(lines) and lines[i].strip() != 'end':
+                trait_block.append(lines[i])
+                i += 1
+            if i < len(lines):
+                trait_block.append(lines[i])
+                i += 1
+            ast.append(parse_trait(trait_block))
+            continue
+        # Function
+        if line.startswith('fn '):
+            fn_block = [line]
+            i += 1
+            while i < len(lines) and lines[i].strip() != 'end':
+                fn_block.append(lines[i])
+                i += 1
+            if i < len(lines):
+                fn_block.append(lines[i])
+                i += 1
+            ast.append(parse_fn(fn_block))
+            continue
+            
