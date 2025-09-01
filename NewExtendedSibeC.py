@@ -29,6 +29,38 @@ from __future__ import annotations
 import sys, re, struct, argparse
 from typing import List, Tuple, Dict, Any, Optional
 from dataclasses import dataclass, field  # Ensure dataclass is available
+from aurora_gui import launch_gui
+import time
+
+def run_with_gui(args):
+    gui = launch_gui("aurora_loading.png")  # Use the exact image I generated
+    try:
+        if args.action in ('build', 'run'):
+            gui.update(0.1, "Parsing")
+            ast = parse_file(src)
+            gui.update(0.3, "Lowering IR")
+            ir = lower_to_ir(ast)
+            gui.update(0.5, "Linting")
+            lint_ast(ast)
+            gui.update(0.7, "Writing Bytecode")
+            with open(args.output, 'w') as f:
+                for line in ir:
+                    f.write(line + '\n')
+            gui.update(0.9, "Finalizing")
+            if args.action == 'run':
+                gui.update(1.0, "Executing")
+                for line in ir:
+                    print(line)
+        elif args.action == 'runbc':
+            gui.update(0.5, "Loading Bytecode")
+            with open(args.source, 'r') as f:
+                ir = [line.strip() for line in f if line.strip()]
+            gui.update(1.0, "Executing")
+            for line in ir:
+                print(line)
+    finally:
+        time.sleep(1.5)
+        gui.stop()
 
 # ============================
 # Silverstarr Compiler - Feature Summary
@@ -868,72 +900,3 @@ def parse_compare(expr: str) -> Optional[Any]:
 
     # Fallback: not a comparison/logical expression
     return None
-
-def parse_file(src: str) -> List[Any]:
-    ast = []
-    lines = src.split('\n')
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip()
-        if not line or line.startswith('--'):
-            i += 1
-            continue
-        # Enum
-        if line.startswith('enum '):
-            enum_block = [line]
-            i += 1
-            while i < len(lines) and not lines[i].strip().endswith('end'):
-                enum_block.append(lines[i])
-                i += 1
-            if i < len(lines):
-                enum_block.append(lines[i])
-                i += 1
-            ast.append(parse_enum('\n'.join(enum_block)))
-            continue
-        # Record
-        if line.startswith('record '):
-            record_block = [line]
-            while not line.endswith('}'):
-                i += 1
-                line = lines[i].strip()
-                record_block.append(line)
-            ast.append(parse_record(' '.join(record_block)))
-            i += 1
-            continue
-        # Capsule
-        if line.startswith('capsule '):
-            capsule_block = [line]
-            i += 1
-            while i < len(lines) and lines[i].strip() != 'done':
-                capsule_block.append(lines[i])
-                i += 1
-            if i < len(lines):
-                capsule_block.append(lines[i])
-                i += 1
-            ast.append(parse_capsule(capsule_block))
-            continue
-        # Trait
-        if line.startswith('trait '):
-            trait_block = [line]
-            i += 1
-            while i < len(lines) and lines[i].strip() != 'end':
-                trait_block.append(lines[i])
-                i += 1
-            if i < len(lines):
-                trait_block.append(lines[i])
-                i += 1
-            ast.append(parse_trait(trait_block))
-            continue
-        # Function
-        if line.startswith('fn '):
-            fn_block = [line]
-            i += 1
-            while i < len(lines) and lines[i].strip() != 'end':
-                fn_block.append(lines[i])
-                i += 1
-            if i < len(lines):
-                fn_block.append(lines[i])
-                i += 1
-            ast.append(parse_fn(fn_block))
-            continue
-            
